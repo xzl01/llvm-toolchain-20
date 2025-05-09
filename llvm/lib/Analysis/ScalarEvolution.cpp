@@ -7854,7 +7854,7 @@ const SCEV *ScalarEvolution::createSCEV(Value *V) {
               unsigned GCD = std::min(MulZeros, TZ);
               APInt DivAmt = APInt::getOneBitSet(BitWidth, TZ - GCD);
               SmallVector<const SCEV*, 4> MulOps;
-              MulOps.push_back(getConstant(OpC->getAPInt().lshr(GCD)));
+              MulOps.push_back(getConstant(OpC->getAPInt().ashr(GCD)));
               append_range(MulOps, LHSMul->operands().drop_front());
               auto *NewMul = getMulExpr(MulOps, LHSMul->getNoWrapFlags());
               ShiftedLHS = getUDivExpr(NewMul, getConstant(DivAmt));
@@ -10635,10 +10635,11 @@ ScalarEvolution::ExitLimit ScalarEvolution::howFarToZero(const SCEV *V,
   if (ControlsOnlyExit && AddRec->hasNoSelfWrap() &&
       loopHasNoAbnormalExits(AddRec->getLoop())) {
 
-    // If the stride is zero, the loop must be infinite.  In C++, most loops
-    // are finite by assumption, in which case the step being zero implies
-    // UB must execute if the loop is entered.
-    if (!loopIsFiniteByAssumption(L) && !isKnownNonZero(StepWLG))
+    // If the stride is zero and the start is non-zero, the loop must be
+    // infinite. In C++, most loops are finite by assumption, in which case the
+    // step being zero implies UB must execute if the loop is entered.
+    if (!(loopIsFiniteByAssumption(L) && isKnownNonZero(Start)) &&
+        !isKnownNonZero(StepWLG))
       return getCouldNotCompute();
 
     const SCEV *Exact =

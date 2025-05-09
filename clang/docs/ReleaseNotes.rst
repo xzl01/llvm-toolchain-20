@@ -545,6 +545,11 @@ New Compiler Flags
 - The ``-Warray-compare-cxx26`` warning has been added to warn about array comparison
   starting from C++26, this warning is enabled as an error by default.
 
+- The ``-Wnontrivial-memcall`` warning has been added to warn about
+  passing non-trivially-copyable destination parameter to ``memcpy``,
+  ``memset`` and similar functions for which it is a documented undefined
+  behavior. It is implied by ``-Wnontrivial-memaccess``
+
 - clang-cl and clang-dxc now support ``-fdiagnostics-color=[auto|never|always]``
   in addition to ``-f[no-]color-diagnostics``.
 
@@ -575,11 +580,6 @@ Modified Compiler Flags
   ``-fveclib=ArmPL`` and ``-fveclib=SLEEF``. This gives Clang more opportunities
   to utilize these vector libraries. The behavior for all other vector function
   libraries remains unchanged.
-
-- The ``-Wnontrivial-memcall`` warning has been added to warn about
-  passing non-trivially-copyable destination parameter to ``memcpy``,
-  ``memset`` and similar functions for which it is a documented undefined
-  behavior. It is implied by ``-Wnontrivial-memaccess``
 
 - Added ``-fmodules-reduced-bmi`` flag corresponding to
   ``-fexperimental-modules-reduced-bmi`` flag. The ``-fmodules-reduced-bmi`` flag
@@ -693,6 +693,16 @@ Improvements to Clang's diagnostics
 - Clang now properly explains the reason a template template argument failed to
   match a template template parameter, in terms of the C++17 relaxed matching rules
   instead of the old ones.
+
+- No longer diagnosing idiomatic function pointer casts on Windows under
+  ``-Wcast-function-type-mismatch`` (which is enabled by ``-Wextra``). Clang
+  would previously warn on this construct, but will no longer do so on Windows:
+
+  .. code-block:: c
+
+    typedef void (WINAPI *PGNSI)(LPSYSTEM_INFO);
+    HMODULE Lib = LoadLibrary("kernel32");
+    PGNSI FnPtr = (PGNSI)GetProcAddress(Lib, "GetNativeSystemInfo");
 
 - Don't emit duplicated dangling diagnostics. (#GH93386).
 
@@ -1058,6 +1068,13 @@ Bug Fixes to C++ Support
 - Fixed a substitution bug in transforming CTAD aliases when the type alias contains a non-pack template argument
   corresponding to a pack parameter (#GH124715)
 - Clang is now better at keeping track of friend function template instance contexts. (#GH55509)
+- Fixes matching of nested template template parameters. (#GH130362)
+- Correctly diagnoses template template paramters which have a pack parameter
+  not in the last position.
+- Fixed an integer overflow bug in computing template parameter depths when synthesizing CTAD guides. (#GH128691)
+- Fixed an incorrect pointer access when checking access-control on concepts. (#GH131530)
+- Fixed various alias CTAD bugs involving variadic template arguments. (#GH123591), (#GH127539), (#GH129077),
+  (#GH129620), and (#GH129998).
 
 Bug Fixes to AST Handling
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1297,6 +1314,11 @@ AVR Support
 ^^^^^^^^^^^
 
 - Reject C/C++ compilation for avr1 devices which have no SRAM.
+
+BPF Support
+^^^^^^^^^^^
+
+- Make ``-mcpu=v3`` as the default.
 
 DWARF Support in Clang
 ----------------------

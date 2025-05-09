@@ -103,7 +103,7 @@ lower-python-dep.diff
 scan-build-py-fix-default-bin.diff
 
 omp-riscv64.patch
-# lldb/test-disable-lldb-i386.diff
+lldb/test-disable-lldb-i386.diff
 llvm-fix-lld-linker-check.diff
 openmp-fix-runtimes-build.diff
 libclc-fix-prepare_builtins-rpath.diff
@@ -140,3 +140,4 @@ lldb-fix-issue-117327.diff
 bolt-disable-proc-check.diff
 python3.13-quote.diff
 #cmake-issue-126358.diff
+ubuntu-questing.patch
